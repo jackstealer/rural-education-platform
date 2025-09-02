@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gamified Learning Platform for Rural Education - Interactive STEM learning for grades 6-12">
+    <meta name="theme-color" content="#2196F3">
+    
+    <title>Rural Education Platform - Learn STEM with Games</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/auth.css">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered: ', registration))
+                    .catch(registrationError => console.log('SW registration failed: ', registrationError));
+            });
+        }
+    </script>
+</head>
+<body>
+    <div id="app">
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <h2>Rural Education Platform</h2>
+                <p>Loading your learning adventure...</p>
+            </div>
+        </div>
+
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="auth-screen hidden">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1>🎓 Rural Education Platform</h1>
+                    <p>Gamified STEM Learning for Everyone</p>
+                </div>
+                
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">Login</button>
+                    <button class="auth-tab" data-tab="register">Register</button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <h2>Welcome Back!</h2>
+                    
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    
+                    <div class="demo-accounts">
+                        <p>Demo Accounts:</p>
+                        <button type="button" class="btn btn-outline" onclick="fillDemo('student')">Student Demo</button>
+                        <button type="button" class="btn btn-outline" onclick="fillDemo('teacher')">Teacher Demo</button>
+                    </div>
+                </form>
+                
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form hidden">
+                    <h2>Join the Adventure!</h2>
+                    
+                    <div class="form-group">
+                        <label for="register-role">I am a:</label>
+                        <select id="register-role" name="role" required>
+                            <option value="">Select Role</option>
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register-name">Full Name</label>
+                        <input type="text" id="register-name" name="full_name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register-username">Username</label>
+                        <input type="text" id="register-username" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" name="password" required minlength="6">
+                    </div>
+                    
+                    <div class="form-group" id="grade-level-group">
+                        <label for="register-grade">Grade Level</label>
+                        <select id="register-grade" name="grade_level">
+                            <option value="">Select Grade</option>
+                            <option value="6">Grade 6</option>
+                            <option value="7">Grade 7</option>
+                            <option value="8">Grade 8</option>
+                            <option value="9">Grade 9</option>
+                            <option value="10">Grade 10</option>
+                            <option value="11">Grade 11</option>
+                            <option value="12">Grade 12</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register-school">School Name</label>
+                        <input type="text" id="register-school" name="school_name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register-language">Preferred Language</label>
+                        <select id="register-language" name="preferred_language">
+                            <option value="english">English</option>
+                            <option value="hindi">हिंदी (Hindi)</option>
+                            <option value="regional">Regional Language</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </form>
+                
+                <div class="auth-footer">
+                    <p>🌐 Works offline • 📱 Mobile friendly • 🎮 Interactive learning</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Content (hidden initially) -->
+        <div id="main-app" class="main-app hidden">
+            <!-- Navigation -->
+            <nav class="navbar">
+                <div class="nav-brand">
+                    <h2>🎓 REP</h2>
+                </div>
+                <div class="nav-menu">
+                    <a href="#dashboard" class="nav-link active">📊 Dashboard</a>
+                    <a href="#subjects" class="nav-link">📚 Subjects</a>
+                    <a href="#games" class="nav-link">🎮 Games</a>
+                    <a href="#achievements" class="nav-link">🏆 Achievements</a>
+                    <a href="#profile" class="nav-link">👤 Profile</a>
+                </div>
+                <div class="nav-actions">
+                    <div class="language-selector">
+                        <select id="language-switch">
+                            <option value="english">🇺🇸 EN</option>
+                            <option value="hindi">🇮🇳 हिं</option>
+                            <option value="regional">🏠 REG</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline" onclick="logout()">Logout</button>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main id="content-area" class="content-area">
+                <!-- Content will be loaded dynamically -->
+            </main>
+        </div>
+
+        <!-- Error Messages -->
+        <div id="error-message" class="error-message hidden">
+            <div class="error-content">
+                <span class="error-text"></span>
+                <button class="error-close" onclick="hideError()">&times;</button>
+            </div>
+        </div>
+
+        <!-- Success Messages -->
+        <div id="success-message" class="success-message hidden">
+            <div class="success-content">
+                <span class="success-text"></span>
+                <button class="success-close" onclick="hideSuccess()">&times;</button>
+            </div>
+        </div>
+
+        <!-- Offline Indicator -->
+        <div id="offline-indicator" class="offline-indicator hidden">
+            <span>📡 You're offline - Some features may be limited</span>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/auth.js"></script>
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/offline.js"></script>
+    <script src="/assets/js/i18n.js"></script>
+</body>
+</html>
