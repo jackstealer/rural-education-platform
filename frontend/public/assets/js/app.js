@@ -413,6 +413,415 @@ class RuralEducationApp {
       });
     });
   }
+
+  async loadSubjects() {
+    try {
+      const response = await fetch('/api/students/subjects', {
+        headers: {
+          'Authorization': `Bearer ${this.authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return this.renderStudentSubjects(data);
+      }
+      throw new Error('Failed to load subjects');
+    } catch (error) {
+      console.error('Subjects error:', error);
+      return this.renderOfflineSubjects();
+    }
+  }
+  
+  renderStudentSubjects(data) {
+    const { subjects } = data;
+    
+    return `
+      <div class="subjects-page">
+        <div class="page-header">
+          <h1>📚 STEM Subjects</h1>
+          <p>Choose a subject to continue your learning journey</p>
+        </div>
+        
+        <div class="subjects-grid grid grid-2">
+          ${subjects.map(subject => `
+            <div class="subject-card card" onclick="app.openSubject('${subject.name}')">
+              <div class="subject-header">
+                <div class="subject-icon">${this.getSubjectIcon(subject.name)}</div>
+                <h3>${subject.displayName}</h3>
+              </div>
+              
+              <div class="subject-progress">
+                <div class="progress-info">
+                  <span>Progress: ${Math.round(subject.progress.avg_completion || 0)}%</span>
+                  <span>Topics: ${subject.progress.completed_topics || 0}/${subject.progress.total_topics || 0}</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: ${subject.progress.avg_completion || 0}%"></div>
+                </div>
+              </div>
+              
+              <div class="subject-stats">
+                <div class="stat">
+                  <span class="stat-label">⭐ Avg Score</span>
+                  <span class="stat-value">${Math.round(subject.progress.avg_score || 0)}%</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">⏱️ Time Spent</span>
+                  <span class="stat-value">${this.formatTime(subject.progress.total_time_spent || 0)}</span>
+                </div>
+              </div>
+              
+              <div class="subject-actions">
+                <button class="btn btn-primary">Continue Learning</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="quick-games">
+          <h2>🎮 Quick Games</h2>
+          <p>Practice concepts with interactive games</p>
+          <div class="games-preview grid grid-4">
+            <button class="game-preview-btn card" onclick="app.openGame('physics', 'projectile-motion')">
+              <div class="game-icon">🎯</div>
+              <div class="game-name">Projectile Motion</div>
+            </button>
+            <button class="game-preview-btn card" onclick="app.openGame('chemistry', 'periodic-table-explorer')">
+              <div class="game-icon">🧪</div>
+              <div class="game-name">Periodic Table</div>
+            </button>
+            <button class="game-preview-btn card" onclick="app.openGame('math', 'geometry-visualizer')">
+              <div class="game-icon">📐</div>
+              <div class="game-name">Geometry</div>
+            </button>
+            <button class="game-preview-btn card" onclick="app.openGame('biology', 'cell-explorer')">
+              <div class="game-icon">🧬</div>
+              <div class="game-name">Cell Explorer</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  renderOfflineSubjects() {
+    return `
+      <div class="subjects-page">
+        <div class="page-header">
+          <h1>📚 STEM Subjects (Offline)</h1>
+          <p>Access cached content while offline</p>
+        </div>
+        
+        <div class="subjects-grid grid grid-2">
+          <div class="subject-card card" onclick="app.openSubject('physics')">
+            <div class="subject-header">
+              <div class="subject-icon">⚛️</div>
+              <h3>Physics</h3>
+            </div>
+            <div class="offline-badge">📱 Offline Ready</div>
+            <p>Explore mechanics, energy, and motion</p>
+            <button class="btn btn-primary">View Content</button>
+          </div>
+          
+          <div class="subject-card card" onclick="app.openSubject('chemistry')">
+            <div class="subject-header">
+              <div class="subject-icon">🧪</div>
+              <h3>Chemistry</h3>
+            </div>
+            <div class="offline-badge">📱 Offline Ready</div>
+            <p>Discover elements, reactions, and compounds</p>
+            <button class="btn btn-primary">View Content</button>
+          </div>
+          
+          <div class="subject-card card" onclick="app.openSubject('math')">
+            <div class="subject-header">
+              <div class="subject-icon">🔢</div>
+              <h3>Mathematics</h3>
+            </div>
+            <div class="offline-badge">📱 Offline Ready</div>
+            <p>Solve problems and visualize concepts</p>
+            <button class="btn btn-primary">View Content</button>
+          </div>
+          
+          <div class="subject-card card" onclick="app.openSubject('biology')">
+            <div class="subject-header">
+              <div class="subject-icon">🧬</div>
+              <h3>Biology</h3>
+            </div>
+            <div class="offline-badge">📱 Offline Ready</div>
+            <p>Study life, cells, and ecosystems</p>
+            <button class="btn btn-primary">View Content</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadGames() {
+    try {
+      const response = await fetch('/api/games', {
+        headers: {
+          'Authorization': `Bearer ${this.authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return this.renderGames(data);
+      }
+      throw new Error('Failed to load games');
+    } catch (error) {
+      console.error('Games error:', error);
+      return this.renderOfflineGames();
+    }
+  }
+  
+  renderGames(data) {
+    const { games } = data;
+    
+    return `
+      <div class="games-page">
+        <div class="page-header">
+          <h1>🎮 Interactive STEM Games</h1>
+          <p>Learn through play with engaging educational games</p>
+        </div>
+        
+        <div class="subject-filter">
+          <button class="filter-btn active" data-subject="all">All Subjects</button>
+          <button class="filter-btn" data-subject="physics">⚛️ Physics</button>
+          <button class="filter-btn" data-subject="chemistry">🧪 Chemistry</button>
+          <button class="filter-btn" data-subject="math">🔢 Math</button>
+          <button class="filter-btn" data-subject="biology">🧬 Biology</button>
+        </div>
+        
+        <div class="games-grid">
+          ${Object.entries(games).map(([subject, subjectGames]) => 
+            subjectGames.map(game => `
+              <div class="game-card" data-subject="${subject}" onclick="app.openGame('${subject}', '${game.id}')">
+                <div class="game-card-header">
+                  <div class="game-card-icon">${game.icon}</div>
+                  <div class="game-card-title">${game.name}</div>
+                  <div class="game-card-description">${game.description}</div>
+                </div>
+                
+                <div class="game-card-content">
+                  <div class="game-card-meta">
+                    <div class="difficulty">
+                      ${Array.from({length: 3}, (_, i) => 
+                        `<div class="difficulty-dot ${i < game.difficulty ? 'active' : ''}"></div>`
+                      ).join('')}
+                    </div>
+                    <div class="estimated-time">⏱️ ${game.estimatedTime} min</div>
+                  </div>
+                  
+                  <div class="game-card-actions">
+                    <button class="btn-play">🎮 Play Now</button>
+                  </div>
+                </div>
+              </div>
+            `).join('')
+          ).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  renderOfflineGames() {
+    const offlineGames = [
+      { id: 'projectile-motion', subject: 'physics', name: 'Projectile Motion', icon: '🎯', description: 'Learn physics through projectile simulation' },
+      { id: 'periodic-table-explorer', subject: 'chemistry', name: 'Periodic Table Explorer', icon: '🧪', description: 'Explore chemical elements interactively' },
+      { id: 'geometry-visualizer', subject: 'math', name: 'Geometry Visualizer', icon: '📐', description: 'Visualize geometric shapes and concepts' },
+      { id: 'cell-explorer', subject: 'biology', name: 'Cell Explorer', icon: '🧬', description: 'Discover the building blocks of life' }
+    ];
+    
+    return `
+      <div class="games-page">
+        <div class="page-header">
+          <h1>🎮 Offline Games</h1>
+          <p>Educational games that work without internet connection</p>
+        </div>
+        
+        <div class="games-grid">
+          ${offlineGames.map(game => `
+            <div class="game-card" onclick="app.openGame('${game.subject}', '${game.id}')">
+              <div class="game-card-header">
+                <div class="game-card-icon">${game.icon}</div>
+                <div class="game-card-title">${game.name}</div>
+                <div class="game-card-description">${game.description}</div>
+              </div>
+              
+              <div class="game-card-content">
+                <div class="offline-badge">📱 Works Offline</div>
+                <div class="game-card-actions">
+                  <button class="btn-play">🎮 Play Now</button>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadAchievements() {
+    try {
+      const response = await fetch('/api/students/achievements', {
+        headers: {
+          'Authorization': `Bearer ${this.authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return this.renderAchievements(data);
+      }
+      throw new Error('Failed to load achievements');
+    } catch (error) {
+      console.error('Achievements error:', error);
+      return this.renderOfflineAchievements();
+    }
+  }
+  
+  renderAchievements(data) {
+    const { achievements, summary } = data;
+    
+    return `
+      <div class="achievements-page">
+        <div class="page-header">
+          <h1>🏆 Achievements</h1>
+          <p>Track your learning milestones and unlock badges</p>
+        </div>
+        
+        <div class="achievements-summary">
+          <div class="summary-stats grid grid-3">
+            <div class="stat-card card">
+              <div class="stat-icon">🏆</div>
+              <div class="stat-number">${summary.earned}</div>
+              <div class="stat-label">Earned</div>
+            </div>
+            <div class="stat-card card">
+              <div class="stat-icon">📊</div>
+              <div class="stat-number">${summary.percentage}%</div>
+              <div class="stat-label">Complete</div>
+            </div>
+            <div class="stat-card card">
+              <div class="stat-icon">🎯</div>
+              <div class="stat-number">${summary.total - summary.earned}</div>
+              <div class="stat-label">Remaining</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="achievements-grid">
+          ${achievements.map(achievement => `
+            <div class="achievement-card card ${achievement.earned ? 'earned' : 'locked'}">
+              <div class="achievement-icon">${achievement.badge_icon}</div>
+              <div class="achievement-info">
+                <h3>${achievement.name}</h3>
+                <p>${achievement.description}</p>
+                <div class="achievement-meta">
+                  <span class="points">💰 ${achievement.points_required} points</span>
+                  ${achievement.earned ? 
+                    `<span class="earned-date">Earned ${this.formatDate(achievement.earned_at)}</span>` :
+                    `<span class="locked">🔒 Locked</span>`
+                  }
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  renderOfflineAchievements() {
+    return `
+      <div class="achievements-page">
+        <div class="page-header">
+          <h1>🏆 Achievements (Offline)</h1>
+          <p>View cached achievements data</p>
+        </div>
+        
+        <div class="offline-message card">
+          <h3>📡 Limited Offline Access</h3>
+          <p>Connect to the internet to sync your latest achievements and unlock new badges.</p>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadProfile() {
+    return `
+      <div class="profile-page">
+        <div class="page-header">
+          <h1>👤 Profile</h1>
+          <p>Manage your account settings and preferences</p>
+        </div>
+        
+        <div class="profile-content grid grid-2">
+          <div class="profile-info card">
+            <h3>Personal Information</h3>
+            <div class="info-item">
+              <label>Full Name:</label>
+              <span>${this.currentUser.full_name}</span>
+            </div>
+            <div class="info-item">
+              <label>Email:</label>
+              <span>${this.currentUser.email}</span>
+            </div>
+            <div class="info-item">
+              <label>Role:</label>
+              <span>${this.capitalizeFirst(this.currentUser.role)}</span>
+            </div>
+            ${this.currentUser.grade_level ? `
+              <div class="info-item">
+                <label>Grade Level:</label>
+                <span>Grade ${this.currentUser.grade_level}</span>
+              </div>
+            ` : ''}
+            <div class="info-item">
+              <label>School:</label>
+              <span>${this.currentUser.school_name || 'Not specified'}</span>
+            </div>
+          </div>
+          
+          <div class="profile-settings card">
+            <h3>Settings</h3>
+            <div class="setting-item">
+              <label>Language Preference:</label>
+              <select id="profile-language">
+                <option value="english" ${this.currentUser.preferred_language === 'english' ? 'selected' : ''}>English</option>
+                <option value="hindi" ${this.currentUser.preferred_language === 'hindi' ? 'selected' : ''}>हिंदी (Hindi)</option>
+                <option value="regional" ${this.currentUser.preferred_language === 'regional' ? 'selected' : ''}>Regional</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="app.saveProfile()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // Helper methods for opening subjects and games
+  openSubject(subject) {
+    // Navigate to subject detail page
+    window.location.href = `/student/subjects.html?subject=${subject}`;
+  }
+  
+  openGame(subject, gameId) {
+    // Open game in new window or navigate
+    window.location.href = `/games/${subject}/${gameId}.html`;
+  }
+  
+  formatTime(seconds) {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+  }
   
   // Utility methods
   getSubjectIcon(subject) {

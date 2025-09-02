@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectile Motion Simulator - Rural Education Platform</title>
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/games.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>🎯 Projectile Motion Simulator</h1>
+            <div class="game-controls">
+                <button id="back-btn" class="btn btn-outline" onclick="history.back()">← Back</button>
+                <button id="reset-btn" class="btn btn-secondary">Reset</button>
+            </div>
+        </div>
+        
+        <div class="game-content">
+            <div class="game-canvas-container">
+                <canvas id="gameCanvas" width="800" height="400"></canvas>
+                <div class="game-ui">
+                    <div class="controls-panel">
+                        <h3>Controls</h3>
+                        <div class="control-group">
+                            <label for="angle">Angle (degrees):</label>
+                            <input type="range" id="angle" min="0" max="90" value="45">
+                            <span id="angleValue">45°</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="velocity">Velocity (m/s):</label>
+                            <input type="range" id="velocity" min="10" max="50" value="25">
+                            <span id="velocityValue">25 m/s</span>
+                        </div>
+                        <button id="launch-btn" class="btn btn-primary">🚀 Launch</button>
+                    </div>
+                    
+                    <div class="info-panel">
+                        <h3>Mission</h3>
+                        <p>Hit the target with your projectile!</p>
+                        <div class="stats">
+                            <div class="stat">
+                                <span class="label">Attempts:</span>
+                                <span id="attempts">0</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">Hits:</span>
+                                <span id="hits">0</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">Score:</span>
+                                <span id="score">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="physics-info">
+            <h3>📚 Physics Concepts</h3>
+            <div class="concepts">
+                <div class="concept">
+                    <strong>Projectile Motion:</strong> Movement of objects launched into the air under gravity's influence.
+                </div>
+                <div class="concept">
+                    <strong>Angle of Launch:</strong> Higher angles give more height but less range.
+                </div>
+                <div class="concept">
+                    <strong>Initial Velocity:</strong> Greater velocity means greater range and height.
+                </div>
+                <div class="concept">
+                    <strong>Gravity:</strong> Always pulls the projectile downward at 9.8 m/s².
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ProjectileGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.angle = 45;
+                this.velocity = 25;
+                this.gravity = 9.8;
+                this.projectile = null;
+                this.target = { x: 650, y: 350, width: 40, height: 40 };
+                this.attempts = 0;
+                this.hits = 0;
+                this.score = 0;
+                this.animationId = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupControls();
+                this.draw();
+            }
+            
+            setupControls() {
+                const angleSlider = document.getElementById('angle');
+                const velocitySlider = document.getElementById('velocity');
+                const launchBtn = document.getElementById('launch-btn');
+                const resetBtn = document.getElementById('reset-btn');
+                
+                angleSlider.addEventListener('input', (e) => {
+                    this.angle = parseInt(e.target.value);
+                    document.getElementById('angleValue').textContent = this.angle + '°';
+                });
+                
+                velocitySlider.addEventListener('input', (e) => {
+                    this.velocity = parseInt(e.target.value);
+                    document.getElementById('velocityValue').textContent = this.velocity + ' m/s';
+                });
+                
+                launchBtn.addEventListener('click', () => {
+                    this.launch();
+                });
+                
+                resetBtn.addEventListener('click', () => {
+                    this.reset();
+                });
+            }
+            
+            launch() {
+                if (this.projectile) return; // Already launched
+                
+                this.attempts++;
+                document.getElementById('attempts').textContent = this.attempts;
+                
+                const angleRad = (this.angle * Math.PI) / 180;
+                this.projectile = {
+                    x: 50,
+                    y: 350,
+                    vx: this.velocity * Math.cos(angleRad),
+                    vy: -this.velocity * Math.sin(angleRad),
+                    trail: []
+                };
+                
+                this.animate();
+            }
+            
+            animate() {
+                this.updateProjectile();
+                this.draw();
+                
+                if (this.projectile && this.projectile.y < 400 && this.projectile.x < 800) {
+                    this.animationId = requestAnimationFrame(() => this.animate());
+                } else {
+                    this.checkHit();
+                    this.projectile = null;
+                }
+            }
+            
+            updateProjectile() {
+                if (!this.projectile) return;
+                
+                const dt = 0.016; // 60 FPS
+                
+                // Add current position to trail
+                this.projectile.trail.push({ x: this.projectile.x, y: this.projectile.y });
+                if (this.projectile.trail.length > 30) {
+                    this.projectile.trail.shift();
+                }
+                
+                // Update position
+                this.projectile.x += this.projectile.vx * dt * 10;
+                this.projectile.y += this.projectile.vy * dt * 10;
+                
+                // Update velocity (only y component changes due to gravity)
+                this.projectile.vy += this.gravity * dt * 10;
+            }
+            
+            checkHit() {
+                if (!this.projectile) return;
+                
+                const px = this.projectile.x;
+                const py = this.projectile.y;
+                const tx = this.target.x;
+                const ty = this.target.y;
+                const tw = this.target.width;
+                const th = this.target.height;
+                
+                if (px >= tx && px <= tx + tw && py >= ty && py <= ty + th) {
+                    this.hits++;
+                    this.score += 100;
+                    document.getElementById('hits').textContent = this.hits;
+                    document.getElementById('score').textContent = this.score;
+                    
+                    // Show success message
+                    this.showMessage('🎯 Target Hit! +100 points', 'success');
+                    
+                    // Move target to new position
+                    this.moveTarget();
+                } else {
+                    this.showMessage('💔 Missed! Try adjusting angle and velocity', 'info');
+                }
+            }
+            
+            moveTarget() {
+                this.target.x = Math.random() * (700 - this.target.width) + 100;
+                this.target.y = Math.random() * (100) + 250;
+            }
+            
+            draw() {
+                // Clear canvas
+                this.ctx.fillStyle = '#87CEEB';
+                this.ctx.fillRect(0, 0, 800, 400);
+                
+                // Draw ground
+                this.ctx.fillStyle = '#90EE90';
+                this.ctx.fillRect(0, 350, 800, 50);
+                
+                // Draw cannon
+                this.ctx.fillStyle = '#654321';
+                this.ctx.fillRect(40, 340, 20, 20);
+                
+                // Draw cannon barrel
+                const angleRad = (this.angle * Math.PI) / 180;
+                this.ctx.strokeStyle = '#654321';
+                this.ctx.lineWidth = 8;
+                this.ctx.beginPath();
+                this.ctx.moveTo(50, 350);
+                this.ctx.lineTo(50 + 30 * Math.cos(angleRad), 350 - 30 * Math.sin(angleRad));
+                this.ctx.stroke();
+                
+                // Draw target
+                this.ctx.fillStyle = '#FF0000';
+                this.ctx.fillRect(this.target.x, this.target.y, this.target.width, this.target.height);
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.fillRect(this.target.x + 10, this.target.y + 10, this.target.width - 20, this.target.height - 20);
+                this.ctx.fillStyle = '#FF0000';
+                this.ctx.fillRect(this.target.x + 15, this.target.y + 15, this.target.width - 30, this.target.height - 30);
+                
+                // Draw projectile trail
+                if (this.projectile && this.projectile.trail.length > 1) {
+                    this.ctx.strokeStyle = '#FFD700';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.projectile.trail[0].x, this.projectile.trail[0].y);
+                    for (let i = 1; i < this.projectile.trail.length; i++) {
+                        this.ctx.lineTo(this.projectile.trail[i].x, this.projectile.trail[i].y);
+                    }
+                    this.ctx.stroke();
+                }
+                
+                // Draw projectile
+                if (this.projectile) {
+                    this.ctx.fillStyle = '#FF4500';
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.projectile.x, this.projectile.y, 5, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                }
+            }
+            
+            showMessage(message, type) {
+                const messageEl = document.createElement('div');
+                messageEl.className = `game-message ${type}`;
+                messageEl.textContent = message;
+                messageEl.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
+                    color: white;
+                    padding: 1rem 2rem;
+                    border-radius: 8px;
+                    font-size: 1.2rem;
+                    z-index: 1000;
+                    animation: fadeInOut 2s ease;
+                `;
+                
+                document.body.appendChild(messageEl);
+                setTimeout(() => messageEl.remove(), 2000);
+            }
+            
+            reset() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                this.projectile = null;
+                this.attempts = 0;
+                this.hits = 0;
+                this.score = 0;
+                this.target.x = 650;
+                this.target.y = 350;
+                
+                document.getElementById('attempts').textContent = '0';
+                document.getElementById('hits').textContent = '0';
+                document.getElementById('score').textContent = '0';
+                
+                this.draw();
+            }
+        }
+        
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize game when page loads
+        window.addEventListener('load', () => {
+            window.game = new ProjectileGame();
+        });
+    </script>
+</body>
+</html>
