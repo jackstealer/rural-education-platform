@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: edna_db
+      POSTGRES_USER: edna_user
+      POSTGRES_PASSWORD: edna_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  # Redis for job queue and caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # Flask Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql://edna_user:edna_password@postgres:5432/edna_db
+      REDIS_URL: redis://redis:6379/0
+      FLASK_ENV: production
+      SECRET_KEY: your-secret-key-here
+    volumes:
+      - ./uploads:/app/uploads
+      - ./blast_dbs:/app/blast_dbs
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Background job worker
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      DATABASE_URL: postgresql://edna_user:edna_password@postgres:5432/edna_db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./uploads:/app/uploads
+      - ./blast_dbs:/app/blast_dbs
+      - ./ai_models:/app/ai_models
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./static:/var/www/static
+      - ./ssl:/etc/ssl/certs
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
